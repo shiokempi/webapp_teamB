@@ -1,0 +1,124 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: sans-serif;
+}
+
+body {
+  background-color: #f5f7fa;
+  padding: 20px;
+  display: flex;
+  justify-content: center;
+}
+
+.budget-container {
+  background: #ffffff;
+  padding: 24px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  width: 100%;
+  max-width: 480px;
+}
+
+h2 {
+  font-size: 1.2rem;
+  color: #333;
+  margin-bottom: 20px;
+}
+
+.control-panel {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.input-group {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.input-group label {
+  font-size: 0.85rem;
+  color: #666;
+}
+
+.input-group input {
+  padding: 8px 12px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 0.95rem;
+}
+
+.summary-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 24px;
+}
+
+.card {
+  background: #f8f9fa;
+  padding: 12px 8px;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.card .label {
+  display: block;
+  font-size: 0.75rem;
+  color: #666;
+  margin-bottom: 4px;
+}
+
+.card .amount {
+  font-size: 1.05rem;
+  font-weight: bold;
+  color: #2b2b2b;
+}
+
+.card .amount.expense {
+  color: #e53e3e;
+}
+
+/* メーター部分 */
+.meter-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.meter-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  color: #555;
+  font-weight: bold;
+}
+
+.meter-bar-bg {
+  width: 100%;
+  height: 16px;
+  background-color: #edf2f7;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.meter-bar-fill {
+  height: 100%;
+  width: 0%;
+  background-color: #3182ce;
+  border-radius: 8px;
+  transition: width 0.4s ease, background-color 0.3s ease;
+}
+
+/* 警告色クラス */
+.meter-bar-fill.warning {
+  background-color: #dd6b20; /* 80%超え: オレンジ */
+}
+
+.meter-bar-fill.danger {
+  background-color: #e53e3e; /* 100%超え: 赤 */
+}
