@@ -122,3 +122,160 @@ h2 {
 .meter-bar-fill.danger {
   background-color: #e53e3e; /* 100%超え: 赤 */
 }
+
+/* ========================================
+   固定費管理画面
+======================================== */
+
+.fixed-cost-container {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.fixed-cost-title {
+  font-size: 1.35rem;
+  color: #333;
+}
+
+.fixed-cost-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px 12px;
+  padding: 18px;
+  background: #f8f9fa;
+  border-radius: 8px;
+}
+
+.fixed-cost-form .input-group input {
+  width: 100%;
+  background: #fff;
+}
+
+.fixed-cost-form .input-group input:focus {
+  border-color: #3182ce;
+  outline: 2px solid rgba(49, 130, 206, 0.15);
+}
+
+.fixed-cost-error {
+  min-height: 1.2em;
+  grid-column: 1 / -1;
+  color: #e53e3e;
+  font-size: 0.85rem;
+}
+
+.fixed-cost-submit {
+  grid-column: 1 / -1;
+  padding: 10px 16px;
+  border: 0;
+  border-radius: 6px;
+  background: #3182ce;
+  color: #fff;
+  font-size: 0.95rem;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.fixed-cost-submit:hover {
+  background: #2b6cb0;
+}
+
+.fixed-cost-section-header {
+  margin-bottom: 14px;
+}
+
+.fixed-cost-section-header h2 {
+  margin-bottom: 8px;
+}
+
+.fixed-cost-total {
+  color: #555;
+  font-size: 0.95rem;
+}
+
+.fixed-cost-total strong {
+  color: #2b2b2b;
+  font-size: 1.05rem;
+}
+
+.fixed-cost-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.fixed-cost-item {
+  padding: 14px;
+  border: 1px solid #edf2f7;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+.fixed-cost-name {
+  margin-bottom: 5px;
+  color: #333;
+  font-size: 1rem;
+  overflow-wrap: anywhere;
+}
+
+.fixed-cost-details {
+  color: #666;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.fixed-cost-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.fixed-cost-button {
+  padding: 6px 12px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: #fff;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.fixed-cost-edit {
+  border-color: #3182ce;
+  color: #2b6cb0;
+}
+
+.fixed-cost-edit:hover {
+  background: #ebf8ff;
+}
+
+.fixed-cost-delete {
+  border-color: #e53e3e;
+  color: #e53e3e;
+}
+
+.fixed-cost-delete:hover {
+  background: #fff5f5;
+}
+
+.fixed-cost-empty {
+  padding: 18px 12px;
+  border-radius: 8px;
+  background: #f8f9fa;
+  color: #777;
+  text-align: center;
+  font-size: 0.9rem;
+}
+
+@media (max-width: 420px) {
+  .fixed-cost-form {
+    grid-template-columns: 1fr;
+  }
+
+  .fixed-cost-error,
+  .fixed-cost-submit {
+    grid-column: 1;
+  }
+}

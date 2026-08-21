@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>家計簿 - 固定費管理</title>
+  <link rel="stylesheet" href="kakeibo.css">
+</head>
+<body>
+  <main class="budget-container fixed-cost-container">
+    <h1 class="fixed-cost-title">固定費管理</h1>
+
+    <!-- 固定費の登録・編集フォーム -->
+    <form id="fixed-cost-form" class="fixed-cost-form" novalidate>
+      <div class="input-group">
+        <label for="fixed-cost-name">名前（任意）</label>
+        <input
+          type="text"
+          id="fixed-cost-name"
+          name="name"
+          placeholder="例：netflix、家賃"
+        >
+      </div>
+
+      <div class="input-group">
+        <label for="fixed-cost-amount">金額（円）</label>
+        <input
+          type="number"
+          id="fixed-cost-amount"
+          name="amount"
+          min="1"
+          <!-- step="1" -->   
+          required
+        >s
+      </div>
+
+      <div class="input-group">
+        <label for="fixed-cost-category">カテゴリ</label>
+        <input
+          type="text"
+          id="fixed-cost-category"
+          name="category"
+          required
+        >
+      </div>
+
+      <div class="input-group">
+        <label for="fixed-cost-payment-day">支払日（1〜31日）</label>
+        <input
+          type="number"
+          id="fixed-cost-payment-day"
+          name="paymentDay"
+          min="1"
+          max="31"
+          step="1"
+          required
+        >
+      </div>
+
+      <p id="fixed-cost-error" class="fixed-cost-error" role="alert" aria-live="polite"></p>
+      <button type="submit" id="fixed-cost-submit" class="fixed-cost-submit">追加</button>
+    </form>
+
+    <!-- 固定費の合計と一覧 -->
+    <section class="fixed-cost-section" aria-labelledby="fixed-cost-list-title">
+      <div class="fixed-cost-section-header">
+        <h2 id="fixed-cost-list-title">固定費一覧</h2>
+        <p class="fixed-cost-total">
+          今月の固定費合計：<strong id="fixed-cost-total">0円</strong>
+        </p>
+      </div>
+
+      <div id="fixed-cost-list" class="fixed-cost-list"></div>
+    </section>
+  </main>
+
+  <script src="koteihi.js"></script>
+</body>
+</html>
