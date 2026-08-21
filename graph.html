@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>家計簿</title>
+</head>
+<body>
+
+  <h1>集計・グラフ</h1>
+
+  <div>収入の合計：<span id="totalIncome" class="plus">\0</span></div>
+  <div>支出の合計：<span id="totalExpense" class="minus">\0</span></div>
+  <div>現在の残高：<span id="totalBalance">\0</span></div>
+
+  <script>
+    const sampleTransactions = [
+      {
+        id: 1,
+        type: "expense",
+        amount: 1200,
+        category: "食費",
+        date: "2026-08-17",
+        memo: "昼食"
+      },
+      {
+        id: 2,
+        type: "income",
+        amount: 50000,
+        category: "給与",
+        date: "2026-08-15",
+        memo: "バイト"
+      }
+    ];
+
+    let totalIncome = 0;
+    let totalExpense = 0;
+
+    sampleTransactions.forEach(function(item) {
+      if (item.type === 'income') {
+        totalIncome += item.amount;
+      } else {
+        totalExpense += item.amount;
+      }
+    });
+
+    const balance = totalIncome - totalExpense;
+
+    document.getElementById('totalIncome').textContent = '¥' + totalIncome.toLocaleString();
+    document.getElementById('totalExpense').textContent = '¥' + totalExpense.toLocaleString();
+        
+    const balanceEl = document.getElementById('totalBalance');
+    balanceEl.textContent = '¥' + balance.toLocaleString();
+  </script>
+</body>
+</html>
