@@ -1,0 +1,329 @@
+/*
+ * 基本の書式（フォント・背景・最大幅・角丸など）は kakeibo.css を使用します。
+ * このファイルには固定費画面専用のスタイルだけを記述します。
+ * HTMLでは kakeibo.css の後に読み込んでください。
+ */
+
+/* ========================================
+   固定費設定画面（この画面専用のクラスに限定）
+======================================== */
+
+.fixed-cost-container {
+  --fixed-cost-accent: #c65019;
+  --fixed-cost-arrow: #186580;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.fixed-cost-title {
+  font-size: 1.5rem;
+  font-weight: 500;
+  color: #222;
+  white-space: nowrap;
+}
+
+.fixed-cost-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.fixed-cost-form-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+
+.fixed-cost-frequency-field {
+  display: flex;
+  align-items: center;
+  border: 1px solid #536875;
+  border-radius: 2px;
+}
+
+.fixed-cost-frequency-field > label {
+  padding: 8px;
+  color: #222;
+  font-size: 1.1rem;
+  white-space: nowrap;
+}
+
+/* スライドの青緑の三角形を左側に置き、操作には標準のselectを使う */
+.fixed-cost-select-wrap {
+  position: relative;
+  min-width: 0;
+}
+
+.fixed-cost-select-wrap::before {
+  content: "";
+  position: absolute;
+  top: 1px;
+  bottom: 1px;
+  left: 1px;
+  width: 54px;
+  border-right: 1px solid #333;
+  pointer-events: none;
+}
+
+.fixed-cost-select-wrap::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 16px;
+  border-top: 15px solid var(--fixed-cost-arrow);
+  border-left: 12px solid transparent;
+  border-right: 12px solid transparent;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.fixed-cost-form select,
+.fixed-cost-amount-field input {
+  width: 100%;
+  min-width: 0;
+  min-height: 64px;
+  border: 1px solid #333;
+  border-radius: 2px;
+  background: #fff;
+  color: var(--fixed-cost-accent);
+  font-size: 1.25rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+.fixed-cost-form select {
+  appearance: none;
+  padding: 14px 16px 14px 64px;
+  text-align-last: center;
+  cursor: pointer;
+}
+
+.fixed-cost-frequency-field .fixed-cost-select-wrap {
+  width: 110px;
+}
+
+.fixed-cost-frequency-field select {
+  min-height: 44px;
+  border: 0;
+  border-left: 1px solid #536875;
+  border-radius: 0;
+  padding: 6px 8px 6px 32px;
+  font-size: 1.1rem;
+}
+
+.fixed-cost-frequency-field .fixed-cost-select-wrap::before {
+  width: 26px;
+}
+
+.fixed-cost-frequency-field .fixed-cost-select-wrap::after {
+  left: 7px;
+  border-top-width: 11px;
+  border-left-width: 8px;
+  border-right-width: 8px;
+}
+
+.fixed-cost-amount-field {
+  position: relative;
+}
+
+.fixed-cost-amount-field input {
+  padding: 14px 48px;
+}
+
+.fixed-cost-amount-field input::placeholder {
+  color: var(--fixed-cost-accent);
+  opacity: 1;
+}
+
+.fixed-cost-currency {
+  position: absolute;
+  top: 50%;
+  right: 24px;
+  color: #555;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.fixed-cost-container :is(input, select, button, [tabindex]):focus-visible {
+  outline: 3px solid var(--fixed-cost-arrow);
+  outline-offset: 3px;
+}
+
+/* 見た目はプレースホルダーに合わせつつ、読み上げ用ラベルを残す */
+.fixed-cost-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+.fixed-cost-error {
+  color: #b42318;
+  font-size: 0.85rem;
+  line-height: 1.6;
+}
+
+.fixed-cost-error:empty {
+  display: none;
+}
+
+.fixed-cost-submit {
+  align-self: flex-end;
+  min-height: 44px;
+  padding: 10px 36px;
+  border: 0;
+  border-radius: 4px;
+  background: var(--fixed-cost-arrow);
+  color: #fff;
+  font-size: 0.95rem;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.fixed-cost-submit:hover {
+  background: #104c62;
+}
+
+.fixed-cost-section-header {
+  margin-bottom: 14px;
+}
+
+.fixed-cost-section-header h2 {
+  margin-bottom: 14px;
+  font-size: 1.5rem;
+  font-weight: 500;
+  color: #222;
+}
+
+.fixed-cost-summary-label {
+  margin-bottom: 8px;
+  color: #555;
+  font-size: 0.8rem;
+}
+
+.fixed-cost-totals {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 16px;
+  font-size: 0.85rem;
+}
+
+.fixed-cost-totals > div {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 4px 8px;
+}
+
+.fixed-cost-totals dt {
+  color: #555;
+}
+
+.fixed-cost-totals dd {
+  color: #222;
+  font-weight: bold;
+  overflow-wrap: anywhere;
+}
+
+.fixed-cost-list {
+  min-height: 220px;
+  max-height: 420px;
+  overflow-y: auto;
+  padding: 0 16px;
+  border: 1px solid #333;
+  border-radius: 2px;
+  scrollbar-gutter: stable;
+}
+
+.fixed-cost-item {
+  padding: 18px 0;
+  background: #fff;
+}
+
+.fixed-cost-item + .fixed-cost-item {
+  border-top: 1px solid #e2e6e9;
+}
+
+.fixed-cost-category-name {
+  margin-bottom: 6px;
+  color: #333;
+  font-size: 1rem;
+  overflow-wrap: anywhere;
+}
+
+.fixed-cost-details {
+  color: var(--fixed-cost-accent);
+  font-size: 1rem;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.fixed-cost-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.fixed-cost-button {
+  min-height: 36px;
+  padding: 6px 12px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: #fff;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.fixed-cost-edit {
+  border-color: var(--fixed-cost-arrow);
+  color: var(--fixed-cost-arrow);
+}
+
+.fixed-cost-edit:hover {
+  background: #eef7fa;
+}
+
+.fixed-cost-delete {
+  border-color: #b42318;
+  color: #b42318;
+}
+
+.fixed-cost-delete:hover {
+  background: #fff5f5;
+}
+
+.fixed-cost-empty {
+  padding: 36px 0;
+  color: #666;
+  text-align: center;
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+@media (max-width: 420px) {
+  .fixed-cost-container {
+    padding: 20px 16px;
+  }
+
+  .fixed-cost-frequency-field {
+    margin-left: auto;
+  }
+
+  .fixed-cost-submit {
+    align-self: stretch;
+  }
+
+  .fixed-cost-list {
+    padding: 0 12px;
+  }
+}
