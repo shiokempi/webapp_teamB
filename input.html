@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>収支データ入力フォーム</title>
+  <style>
+    body { font-family: sans-serif; max-width: 500px; margin: 20px auto; padding: 0 10px; }
+    .form-group { margin-bottom: 12px; }
+    label { display: block; margin-bottom: 4px; font-weight: bold; }
+    input, select { width: 100%; padding: 8px; box-sizing: border-box; }
+    button { width: 100%; padding: 10px; background-color: #007bff; color: white; border: none; cursor: pointer; font-size: 16px; margin-top: 10px; }
+    button:hover { background-color: #0056b3; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+    th { background-color: #f2f2f2; }
+  </style>
+</head>
+<body>
+
+  <h2>収支データ入力フォーム</h2>
+
+  <form id="transactionForm">
+    <div class="form-group">
+      <label for="type">種別</label>
+      <select id="type" required>
+        <option value="expense">支出</option>
+        <option value="income">収入</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="amount">金額</label>
+      <input type="number" id="amount" required min="1" placeholder="例: 1200">
+    </div>
+
+    <div class="form-group">
+      <label for="category">カテゴリ</label>
+      <select id="category">
+        <option value="food">食費</option>
+        <option value="transport">交通費</option>
+        <option value="shopping">買い物</option>
+        <option value="entertainment">娯楽</option>
+        <option value="other">その他</option>
+      </select>
+    </div>
+    
+    <div class="form-group">
+      <label for="date">日付</label>
+      <input type="date" id="date" required>
+    </div>
+
+    <div class="form-group">
+      <label for="memo">メモ</label>
+      <input type="text" id="memo" placeholder="例: 昼食">
+    </div>
+
+    <button type="submit">追加する</button>
+  </form>
+
+  <h3>登録済み一覧</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>種別</th>
+        <th>金額</th>
+        <th>カテゴリ</th>
+        <th>日付</th>
+        <th>メモ</th>
+      </tr>
+    </thead>
+    <tbody id="transactionList">
+      <!-- 入力したデータがここに追加されます -->
+    </tbody>
+  </table>
+
+  <script>
+
+    //英語を日本語に
+    const categorynames = {
+        food: '食費',
+        transport: '交通費',
+        shopping: '買い物',
+        entertainment: '娯楽',
+        other: 'その他'
+    };
+
+    // データを保存する配列
+    let transactions = [];
+
+    // 日付入力の初期値として今日の日付を自動セット
+    document.getElementById('date').valueAsDate = new Date();
+
+    // ボタンを押したときの処理
+    document.getElementById('transactionForm').addEventListener('submit', function(e) {
+      e.preventDefault(); // 画面のリロードを防止
+
+      // 画面の入力値を取得
+      const type = document.getElementById('type').value;
+      const amount = Number(document.getElementById('amount').value);
+      const category = document.getElementById('category').value;
+      const date = document.getElementById('date').value;
+      const memo = document.getElementById('memo').value;
+
+      // IDの取得
+      const nextId = transactions.length > 0 
+        ? Math.max(...transactions.map(t => t.id)) + 1 
+        : 1;
+
+      // オブジェクトの作成
+      const newTransaction = {
+        id: nextId,
+        type: type,
+        amount: amount,
+        category: category,
+        date: date,
+        memo: memo
+      };
+
+      // 配列に挿入
+      transactions.push(newTransaction);
+
+      // 一覧表を更新
+      renderTable();
+
+      // 入力フォームのクリア（日付と種別以外）
+      document.getElementById('amount').value = '';
+      document.getElementById('memo').value = '';
+    });
+
+    // 表を描画・更新する関数
+    function renderTable() {
+      const tbody = document.getElementById('transactionList');
+      tbody.innerHTML = ''; // 一旦クリア
+
+      transactions.forEach(item => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${item.id}</td>
+          <td>${item.type === 'expense' ? '支出' : '収入'}</td>
+          <td>${item.amount.toLocaleString()}円</td>
+          <td>${categorynames[item.category]}</td>
+          <td>${item.date}</td>
+          <td>${item.memo}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+  </script>
+</body>
+</html>
