@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>家計簿 - 固定費設定</title>
+  <!-- 共通の書式を読み込んでから、固定費画面専用のスタイルを適用する -->
+  <link rel="stylesheet" href="kakeibo.css">
+  <link rel="stylesheet" href="koteihi.css">
+</head>
+<body>
+  <main class="budget-container fixed-cost-container">
+    <!-- 固定費の登録・編集フォーム -->
+    <form id="fixed-cost-form" class="fixed-cost-form" aria-labelledby="fixed-cost-title" novalidate>
+      <div class="fixed-cost-form-heading">
+        <h1 id="fixed-cost-title" class="fixed-cost-title">固定費設定</h1>
+        <div class="fixed-cost-frequency-field">
+          <label for="fixed-cost-frequency">頻度</label>
+          <div class="fixed-cost-select-wrap">
+            <select id="fixed-cost-frequency" name="frequency" required>
+              <!-- 選択肢は koteihi.js の FIXED_COST_FREQUENCIES で管理 -->
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="fixed-cost-select-wrap fixed-cost-category-field">
+        <label for="fixed-cost-category" class="fixed-cost-visually-hidden">カテゴリ</label>
+        <select id="fixed-cost-category" name="category" required aria-describedby="fixed-cost-error">
+          <option value="">カテゴリ</option>
+          <!-- 別ページとの連携方法・初期カテゴリの編集箇所は koteihi.js に記載 -->
+        </select>
+      </div>
+
+      <div class="fixed-cost-amount-field">
+        <label for="fixed-cost-amount" class="fixed-cost-visually-hidden">金額（円）</label>
+        <input
+          type="number"
+          id="fixed-cost-amount"
+          name="amount"
+          placeholder="金額"
+          min="1"
+          step="1"
+          inputmode="numeric"
+          aria-describedby="fixed-cost-error"
+          required
+        >
+        <span class="fixed-cost-currency" aria-hidden="true">円</span>
+      </div>
+
+      <p id="fixed-cost-error" class="fixed-cost-error" role="alert" aria-live="polite"></p>
+      <button type="submit" id="fixed-cost-submit" class="fixed-cost-submit">追加</button>
+    </form>
+
+    <!-- 異なる頻度を月額換算せず、頻度ごとに合計する -->
+    <section class="fixed-cost-section" aria-labelledby="fixed-cost-list-title">
+      <div class="fixed-cost-section-header">
+        <h2 id="fixed-cost-list-title">固定費一覧</h2>
+        <p class="fixed-cost-summary-label">登録金額の合計（頻度別）</p>
+        <dl id="fixed-cost-totals" class="fixed-cost-totals" aria-live="polite"></dl>
+      </div>
+
+      <div id="fixed-cost-list" class="fixed-cost-list" role="region" aria-labelledby="fixed-cost-list-title" tabindex="0"></div>
+    </section>
+  </main>
+
+  <script src="koteihi.js"></script>
+</body>
+</html>
