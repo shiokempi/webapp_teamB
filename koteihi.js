@@ -106,7 +106,7 @@ function renderFixedCostCategoryOptions(selectedCategory = categoryInput.value) 
   if (editingFixedCost && !categories.includes(editingFixedCost.category)) {
     categories.push(editingFixedCost.category);
   }
-
+// 選択肢の順番は保存済みの順番を優先し、最後に追加されたカテゴリを末尾に置く。
   categoryInput.replaceChildren();
   const placeholder = document.createElement("option");
   placeholder.value = "";
@@ -156,7 +156,7 @@ function loadFixedCosts() {
     if (savedFixedCosts === null) {
       return [];
     }
-
+    // 保存済みのデータが配列でない場合は空配列を返す
     const parsedFixedCosts = JSON.parse(savedFixedCosts);
     if (!Array.isArray(parsedFixedCosts)) {
       return [];
