@@ -243,17 +243,19 @@
       updateUI();
     }
 
-    // --- 画面表示更新 ---
+    // --- 画面表示更新（予算管理との連動処理を追加） ---
     function updateUI() {
       const header = document.getElementById('currentMonthHeader');
-      if (!header) return;
-      header.textContent = `${currentYear}年${currentMonth}月`;
+      if (header) {
+        header.textContent = `${currentYear}年${currentMonth}月`;
+      }
 
       let totalIncome = 0;
       let totalExpense = 0;
       const incomeCategories = {};
       const expenseCategories = {};
 
+      // 1. 当月の収支データを集計
       sampleTransactions.forEach(function(item) {
         const itemDate = new Date(item.date);
         const itemYear = itemDate.getFullYear();
@@ -270,33 +272,60 @@
         }
       });
 
+      // --- 2. グラフ・集計画面の更新 ---
       const balance = totalIncome - totalExpense;
+      if (document.getElementById('totalIncome')) {
+        document.getElementById('totalIncome').textContent = '¥' + totalIncome.toLocaleString();
+        document.getElementById('totalExpense').textContent = '¥' + totalExpense.toLocaleString();
+            
+        const balanceEl = document.getElementById('totalBalance');
+        balanceEl.textContent = '¥' + balance.toLocaleString();
+        balanceEl.className = balance >= 0 ? 'summary-amount plus' : 'summary-amount minus';
 
-      document.getElementById('totalIncome').textContent = '¥' + totalIncome.toLocaleString();
-      document.getElementById('totalExpense').textContent = '¥' + totalExpense.toLocaleString();
-          
-      const balanceEl = document.getElementById('totalBalance');
-      balanceEl.textContent = '¥' + balance.toLocaleString();
-      balanceEl.className = balance >= 0 ? 'summary-amount plus' : 'summary-amount minus';
+        const incomeListEl = document.getElementById('incomeCategoryList');
+        incomeListEl.innerHTML = '';
+        for (const category in incomeCategories) {
+          const li = document.createElement('li');
+          li.innerHTML = `<span>${category}</span> <strong>¥${incomeCategories[category].toLocaleString()}</strong>`;
+          incomeListEl.appendChild(li);
+        }
 
-      const incomeListEl = document.getElementById('incomeCategoryList');
-      incomeListEl.innerHTML = '';
-      for (const category in incomeCategories) {
-        const li = document.createElement('li');
-        li.innerHTML = `<span>${category}</span> <strong>¥${incomeCategories[category].toLocaleString()}</strong>`;
-        incomeListEl.appendChild(li);
+        const expenseListEl = document.getElementById('expenseCategoryList');
+        expenseListEl.innerHTML = '';
+        for (const category in expenseCategories) {
+          const li = document.createElement('li');
+          li.innerHTML = `<span>${category}</span> <strong>¥${expenseCategories[category].toLocaleString()}</strong>`;
+          expenseListEl.appendChild(li);
+        }
+
+        const activeCategories = currentTab === 'income' ? incomeCategories : expenseCategories;
+        drawLocalChart(activeCategories);
       }
 
-      const expenseListEl = document.getElementById('expenseCategoryList');
-      expenseListEl.innerHTML = '';
-      for (const category in expenseCategories) {
-        const li = document.createElement('li');
-        li.innerHTML = `<span>${category}</span> <strong>¥${expenseCategories[category].toLocaleString()}</strong>`;
-        expenseListEl.appendChild(li);
-      }
+      // --- 3. 予算管理画面の更新 ---
+      const budgetInput = document.getElementById('budget-input');
+      if (budgetInput) {
+        const budget = Number(budgetInput.value) || 0;
+        const remaining = budget - totalExpense;
+        const percentage = budget > 0 ? Math.min(Math.round((totalExpense / budget) * 100), 100) : 0;
 
-      const activeCategories = currentTab === 'income' ? incomeCategories : expenseCategories;
-      drawLocalChart(activeCategories);
+        // カードの金額を更新
+        document.getElementById('display-budget').textContent = '¥' + budget.toLocaleString();
+        document.getElementById('display-expense').textContent = '¥' + totalExpense.toLocaleString();
+        document.getElementById('display-remaining').textContent = '¥' + remaining.toLocaleString();
+
+        // メーター（プログレスバー）を更新
+        document.getElementById('meter-percentage').textContent = percentage + '%';
+        const fillEl = document.getElementById('meter-fill');
+        if (fillEl) {
+          fillEl.style.width = percentage + '%';
+        }
+      }
+    }
+
+    // 予算入力（数字変更）があった時リアルタイム反映するイベント
+    if (document.getElementById('budget-input')) {
+      document.getElementById('budget-input').addEventListener('input', updateUI);
     }
 
     // --- 円グラフ描画 ---
