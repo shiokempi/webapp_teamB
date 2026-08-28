@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>家計簿アプリ</title>
+  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- 下部タブ切り替え用ラジオボタン -->
+  <input type="radio" id="tab-input" name="nav-tab" checked>
+  <input type="radio" id="tab-budget" name="nav-tab">
+  <input type="radio" id="tab-graph" name="nav-tab" onchange="onGraphTabOpen()">
+  <input type="radio" id="tab-calendar" name="nav-tab">
+  <input type="radio" id="tab-fixed" name="nav-tab">
+
+  <nav class="app-nav">
+    <label for="tab-input" class="nav-btn">収支入力</label>
+    <label for="tab-budget" class="nav-btn">予算管理</label>
+    <label for="tab-graph" class="nav-btn">グラフ・集計</label>
+    <label for="tab-calendar" class="nav-btn">カレンダー</label>
+    <label for="tab-fixed" class="nav-btn">固定費</label>
+  </nav>
+
+  <main class="app-container">
+    
+    <!-- 1. 収支入力 -->
+    <section class="page-section section-input">
+      <h2>収支データ入力フォーム</h2>
+      <form id="transactionForm">
+        <div class="form-group">
+          <label for="type">種別</label>
+          <select id="type" required>
+            <option value="expense">支出</option>
+            <option value="income">収入</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="amount">金額</label>
+          <input type="number" id="amount" required min="1" placeholder="例: 1200">
+        </div>
+        <div class="form-group">
+          <label for="category">カテゴリ</label>
+          <select id="category">
+            <option value="食費">食費</option>
+            <option value="交通費">交通費</option>
+            <option value="買い物">買い物</option>
+            <option value="娯楽">娯楽</option>
+            <option value="給与">給与</option>
+            <option value="その他">その他</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="date">日付</label>
+          <input type="date" id="date" required>
+        </div>
+        <div class="form-group">
+          <label for="memo">メモ</label>
+          <input type="text" id="memo" placeholder="例: 昼食">
+        </div>
+        <button type="submit">追加する</button>
+      </form>
+      <h3>登録済み一覧</h3>
+      <table>
+        <thead>
+          <tr><th>ID</th><th>種別</th><th>金額</th><th>カテゴリ</th><th>日付</th><th>メモ</th></tr>
+        </thead>
+        <tbody id="transactionList"></tbody>
+      </table>
+    </section>
+
+    <!-- 2. 予算管理 -->
+    <section class="page-section section-budget">
+      <div class="budget-container">
+        <h2>月間予算管理</h2>
+        <div class="control-panel">
+          <div class="input-group">
+            <label for="month-select">対象月</label>
+            <input type="month" id="month-select" value="2026-08">
+          </div>
+          <div class="input-group">
+            <label for="budget-input">今月の予算 (円)</label>
+            <input type="number" id="budget-input" value="100000" step="1000">
+          </div>
+        </div>
+        <div class="summary-cards">
+          <div class="card"><span class="label">今月の予算</span><span class="amount" id="display-budget">¥0</span></div>
+          <div class="card"><span class="label">今月の支出</span><span class="amount expense" id="display-expense">¥0</span></div>
+          <div class="card"><span class="label">残額</span><span class="amount" id="display-remaining">¥0</span></div>
+        </div>
+        <div class="meter-section">
+          <div class="meter-header">
+            <span>予算使用率</span>
+            <span id="meter-percentage">0%</span>
+          </div>
+          <div class="meter-bar-bg">
+            <div class="meter-bar-fill" id="meter-fill"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. グラフ・集計 -->
+    <section class="page-section section-graph">
+      <div class="month-header">
+        <button class="month-btn" onclick="changeMonth(-1)">◀</button>
+        <div id="currentMonthHeader" class="month-title">----年--月</div>
+        <button class="month-btn" onclick="changeMonth(1)">▶</button>
+      </div>
+      <div class="summary-section">
+        <div class="summary-row">
+          <div class="summary-box"><span class="summary-label">収入</span><span id="totalIncome" class="summary-amount plus">¥0</span></div>
+          <div class="summary-box"><span class="summary-label">支出</span><span id="totalExpense" class="summary-amount minus">¥0</span></div>
+        </div>
+        <div class="summary-box full-width"><span class="summary-label">残高</span><span id="totalBalance" class="summary-amount">¥0</span></div>
+      </div>
+      <div class="category-section">
+        <div class="tab-container">
+          <button class="tab-button active" onclick="switchTab('income')">収入</button>
+          <button class="tab-button" onclick="switchTab('expense')">支出</button>
+        </div>
+        <div class="chart-container">
+          <canvas id="categoryChart" width="220" height="220"></canvas>
+          <div id="chartLegend" class="chart-legend"></div>
+        </div>
+        <div id="incomeTabContent" class="tab-content active"><ul id="incomeCategoryList"></ul></div>
+        <div id="expenseTabContent" class="tab-content"><ul id="expenseCategoryList"></ul></div>
+      </div>
+    </section>
+
+    <!-- 4. カレンダー -->
+    <section class="page-section section-calendar">
+      <h1>家計簿カレンダー</h1>
+      <div id="calendar"></div>
+    </section>
+
+    <!-- 5. 固定費（元通りの完全なフォーム） -->
+    <section class="page-section section-fixed">
+      <div class="budget-container fixed-cost-container">
+        <form id="fixed-cost-form" class="fixed-cost-form" aria-labelledby="fixed-cost-title" novalidate>
+          <div class="fixed-cost-form-heading">
+            <h1 id="fixed-cost-title" class="fixed-cost-title">固定費設定</h1>
+            <div class="fixed-cost-frequency-field">
+              <label for="fixed-cost-frequency">頻度</label>
+              <div class="fixed-cost-select-wrap"><select id="fixed-cost-frequency" name="frequency" required></select></div>
+            </div>
+          </div>
+          <div class="fixed-cost-select-wrap fixed-cost-category-field">
+            <label for="fixed-cost-category" class="fixed-cost-visually-hidden">カテゴリ</label>
+            <select id="fixed-cost-category" name="category" required aria-describedby="fixed-cost-error">
+              <option value="">カテゴリ</option>
+            </select>
+          </div>
+          <div class="fixed-cost-amount-field">
+            <label for="fixed-cost-amount" class="fixed-cost-visually-hidden">金額（円）</label>
+            <input type="number" id="fixed-cost-amount" name="amount" placeholder="金額" min="1" step="1" inputmode="numeric" aria-describedby="fixed-cost-error" required>
+            <span class="fixed-cost-currency" aria-hidden="true">円</span>
+          </div>
+          <p id="fixed-cost-error" class="fixed-cost-error" role="alert" aria-live="polite"></p>
+          <button type="submit" id="fixed-cost-submit" class="fixed-cost-submit">追加</button>
+        </form>
+        <section class="fixed-cost-section" aria-labelledby="fixed-cost-list-title">
+          <div class="fixed-cost-section-header">
+            <h2 id="fixed-cost-list-title">固定費一覧</h2>
+            <p class="fixed-cost-summary-label">登録金額の合計（頻度別）</p>
+            <dl id="fixed-cost-totals" class="fixed-cost-totals" aria-live="polite"></dl>
+          </div>
+          <div id="fixed-cost-list" class="fixed-cost-list" role="region" aria-labelledby="fixed-cost-list-title" tabindex="0"></div>
+        </section>
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    // --- 共有データ ---
+    let sampleTransactions = [
+      { id: 1, type: "expense", amount: 1200, category: "食費", date: "2026-08-17", memo: "昼食" },
+      { id: 2, type: "income", amount: 50000, category: "給与", date: "2026-08-15", memo: "バイト" },
+      { id: 3, type: "expense", amount: 3500, category: "食費", date: "2026-08-18", memo: "夜ごはん" },
+      { id: 4, type: "expense", amount: 840, category: "交通費", date: "2026-08-19", memo: "電車賃" }
+    ];
+
+    let currentTab = 'income';
+    const colors = ['#4caf50', '#ff9800', '#2196f3', '#e91e63', '#9c27b0', '#00bcd4'];
+
+    let currentYear = 2026;
+    let currentMonth = 8;
+
+    // --- 入力フォーム処理 ---
+    if (document.getElementById('date')) {
+      document.getElementById('date').valueAsDate = new Date();
+    }
+
+    if (document.getElementById('transactionForm')) {
+      document.getElementById('transactionForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const type = document.getElementById('type').value;
+        const amount = Number(document.getElementById('amount').value);
+        const category = document.getElementById('category').value;
+        const date = document.getElementById('date').value;
+        const memo = document.getElementById('memo').value;
+        const nextId = sampleTransactions.length > 0 ? Math.max(...sampleTransactions.map(t => t.id)) + 1 : 1;
+        
+        sampleTransactions.push({ id: nextId, type, amount, category, date, memo });
+        renderTable();
+        updateUI();
+        document.getElementById('amount').value = '';
+        document.getElementById('memo').value = '';
+      });
+    }
+
+    function renderTable() {
+      const tbody = document.getElementById('transactionList');
+      if (!tbody) return;
+      tbody.innerHTML = '';
+      sampleTransactions.forEach(item => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${item.id}</td><td>${item.type === 'expense' ? '支出' : '収入'}</td><td>${item.amount.toLocaleString()}円</td><td>${item.category}</td><td>${item.date}</td><td>${item.memo}</td>`;
+        tbody.appendChild(tr);
+      });
+    }
+
+    // --- グラフタブを開いた時のリサイズ対策処理 ---
+    function onGraphTabOpen() {
+      setTimeout(() => {
+        updateUI();
+      }, 50);
+    }
+
+    // --- 月変更 ---
+    function changeMonth(offset) {
+      currentMonth += offset;
+      if (currentMonth > 12) {
+        currentMonth = 1;
+        currentYear += 1;
+      } else if (currentMonth < 1) {
+        currentMonth = 12;
+        currentYear -= 1;
+      }
+      updateUI();
+    }
+
+    // --- 画面表示更新 ---
+    function updateUI() {
+      const header = document.getElementById('currentMonthHeader');
+      if (!header) return;
+      header.textContent = `${currentYear}年${currentMonth}月`;
+
+      let totalIncome = 0;
+      let totalExpense = 0;
+      const incomeCategories = {};
+      const expenseCategories = {};
+
+      sampleTransactions.forEach(function(item) {
+        const itemDate = new Date(item.date);
+        const itemYear = itemDate.getFullYear();
+        const itemMonth = itemDate.getMonth() + 1;
+
+        if (itemYear === currentYear && itemMonth === currentMonth) {
+          if (item.type === 'income') {
+            totalIncome += item.amount;
+            incomeCategories[item.category] = (incomeCategories[item.category] || 0) + item.amount;
+          } else {
+            totalExpense += item.amount;
+            expenseCategories[item.category] = (expenseCategories[item.category] || 0) + item.amount;
+          }
+        }
+      });
+
+      const balance = totalIncome - totalExpense;
+
+      document.getElementById('totalIncome').textContent = '¥' + totalIncome.toLocaleString();
+      document.getElementById('totalExpense').textContent = '¥' + totalExpense.toLocaleString();
+          
+      const balanceEl = document.getElementById('totalBalance');
+      balanceEl.textContent = '¥' + balance.toLocaleString();
+      balanceEl.className = balance >= 0 ? 'summary-amount plus' : 'summary-amount minus';
+
+      const incomeListEl = document.getElementById('incomeCategoryList');
+      incomeListEl.innerHTML = '';
+      for (const category in incomeCategories) {
+        const li = document.createElement('li');
+        li.innerHTML = `<span>${category}</span> <strong>¥${incomeCategories[category].toLocaleString()}</strong>`;
+        incomeListEl.appendChild(li);
+      }
+
+      const expenseListEl = document.getElementById('expenseCategoryList');
+      expenseListEl.innerHTML = '';
+      for (const category in expenseCategories) {
+        const li = document.createElement('li');
+        li.innerHTML = `<span>${category}</span> <strong>¥${expenseCategories[category].toLocaleString()}</strong>`;
+        expenseListEl.appendChild(li);
+      }
+
+      const activeCategories = currentTab === 'income' ? incomeCategories : expenseCategories;
+      drawLocalChart(activeCategories);
+    }
+
+    // --- 円グラフ描画 ---
+    function drawLocalChart(categoriesData) {
+      const canvas = document.getElementById('categoryChart');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      const legendEl = document.getElementById('chartLegend');
+      
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      legendEl.innerHTML = '';
+
+      const labels = Object.keys(categoriesData);
+      const values = Object.values(categoriesData);
+      const total = values.reduce((sum, val) => sum + val, 0);
+
+      if (total === 0) {
+        legendEl.innerHTML = '<span style="color:#94a3b8; font-size:0.85rem;">データがありません</span>';
+        return;
+      }
+
+      const centerX = canvas.width / 2;
+      const centerY = canvas.height / 2;
+      const radius = Math.min(centerX, centerY) * 0.85;
+      let startAngle = -Math.PI / 2;
+
+      labels.forEach((label, index) => {
+        const sliceAngle = (values[index] / total) * 2 * Math.PI;
+        const color = colors[index % colors.length];
+
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.moveTo(centerX, centerY);
+        ctx.arc(centerX, centerY, radius, startAngle, startAngle + sliceAngle);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        const percentage = ((values[index] / total) * 100).toFixed(0);
+        const item = document.createElement('div');
+        item.className = 'legend-item';
+        item.innerHTML = `<span class="legend-color" style="background-color: ${color}"></span><span>${label} (${percentage}%)</span>`;
+        legendEl.appendChild(item);
+
+        startAngle += sliceAngle;
+      });
+
+      // ドーナツ穴
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, radius * 0.55, 0, 2 * Math.PI);
+      ctx.fill();
+    }
+
+    // --- タブ切り替え ---
+    function switchTab(type) {
+      currentTab = type;
+      document.getElementById('incomeTabContent').classList.remove('active');
+      document.getElementById('expenseTabContent').classList.remove('active');
+      
+      const buttons = document.querySelectorAll('.tab-button');
+      buttons.forEach(btn => btn.classList.remove('active'));
+
+      if (type === 'income') {
+        document.getElementById('incomeTabContent').classList.add('active');
+        buttons[0].classList.add('active');
+      } else {
+        document.getElementById('expenseTabContent').classList.add('active');
+        buttons[1].classList.add('active');
+      }
+
+      updateUI();
+    }
+
+    // 初期化
+    renderTable();
+    updateUI();
+  </script>
+  
+  <!-- 外部スクリプト -->
+  <script src="karenda-.js"></script>
+  <script src="koteihi.js"></script>
+</body>
+</html>
