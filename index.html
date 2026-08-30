@@ -13,7 +13,7 @@
   <input type="radio" id="tab-input" name="nav-tab" checked>
   <input type="radio" id="tab-budget" name="nav-tab">
   <input type="radio" id="tab-graph" name="nav-tab" onchange="onGraphTabOpen()">
-  <input type="radio" id="tab-calendar" name="nav-tab">
+  <input type="radio" id="tab-calendar" name="nav-tab" onchange="renderCalendar(calYear, calMonth)">
   <input type="radio" id="tab-fixed" name="nav-tab">
 
   <nav class="app-nav">
@@ -137,7 +137,7 @@
       <div id="calendar"></div>
     </section>
 
-    <!-- 5. 固定費（元通りの完全なフォーム） -->
+    <!-- 5. 固定費 -->
     <section class="page-section section-fixed">
       <div class="budget-container fixed-cost-container">
         <form id="fixed-cost-form" class="fixed-cost-form" aria-labelledby="fixed-cost-title" novalidate>
@@ -194,55 +194,54 @@
     let calMonth = currentMonth;
 
     // --- 固定費データを取得して対象月の収支リスト（配列）を生成する共通ヘルパー ---
-function getAllTransactionsForMonth(year, month) {
-  const list = [...sampleTransactions];
+    function getAllTransactionsForMonth(year, month) {
+      const list = [...sampleTransactions];
 
-  if (window.fixedCosts && Array.isArray(window.fixedCosts)) {
-    window.fixedCosts.forEach(item => {
-      const freq = item.frequency;
+      if (window.fixedCosts && Array.isArray(window.fixedCosts)) {
+        window.fixedCosts.forEach(item => {
+          const freq = item.frequency;
 
-      // --- 1. 「毎日」の場合：その月の日数分、日ごとにデータを作成 ---
-      if (freq === 'daily' || freq === '毎日') {
-        // 対象月の日数を取得（例: 8月なら31日）
-        const daysInMonth = new Date(year, month, 0).getDate();
-        for (let d = 1; d <= daysInMonth; d++) {
-          const dayStr = String(d).padStart(2, '0');
-          const dateStr = `${year}-${String(month).padStart(2, '0')}-${dayStr}`;
-          
-          list.push({
-            id: `fixed_${item.id}_${d}`,
-            type: 'expense',
-            amount: item.amount,
-            category: item.category || '固定費',
-            date: dateStr,
-            memo: '固定費 (毎日)'
-          });
-        }
-      } 
-      // --- 2. それ以外（毎週・毎月・毎年）は毎月1日にまとめて計上 ---
-      else {
-        const dateStr = `${year}-${String(month).padStart(2, '0')}-01`;
-        let monthlyAmount = item.amount;
+          // --- 1. 「毎日」の場合：その月の日数分、日ごとにデータを作成 ---
+          if (freq === 'daily' || freq === '毎日') {
+            const daysInMonth = new Date(year, month, 0).getDate();
+            for (let d = 1; d <= daysInMonth; d++) {
+              const dayStr = String(d).padStart(2, '0');
+              const dateStr = `${year}-${String(month).padStart(2, '0')}-${dayStr}`;
+              
+              list.push({
+                id: `fixed_${item.id}_${d}`,
+                type: 'expense',
+                amount: item.amount,
+                category: item.category || '固定費',
+                date: dateStr,
+                memo: '固定費 (毎日)'
+              });
+            }
+          } 
+          // --- 2. それ以外（毎週・毎月・毎年）は毎月1日にまとめて計上 ---
+          else {
+            const dateStr = `${year}-${String(month).padStart(2, '0')}-01`;
+            let monthlyAmount = item.amount;
 
-        if (freq === 'weekly' || freq === '毎週') {
-          monthlyAmount = item.amount * 4; // 週4回換算
-        } else if (freq === 'yearly' || freq === '毎年') {
-          monthlyAmount = Math.round(item.amount / 12); // 月割り換算
-        }
+            if (freq === 'weekly' || freq === '毎週') {
+              monthlyAmount = item.amount * 4;
+            } else if (freq === 'yearly' || freq === '毎年') {
+              monthlyAmount = Math.round(item.amount / 12);
+            }
 
-        list.push({
-          id: 'fixed_' + item.id,
-          type: 'expense',
-          amount: monthlyAmount,
-          category: item.category || '固定費',
-          date: dateStr,
-          memo: '固定費 (' + (item.frequencyName || freq || '月額') + ')'
+            list.push({
+              id: 'fixed_' + item.id,
+              type: 'expense',
+              amount: monthlyAmount,
+              category: item.category || '固定費',
+              date: dateStr,
+              memo: '固定費 (' + (item.frequencyName || freq || '月額') + ')'
+            });
+          }
         });
       }
-    });
-  }
-  return list;
-}
+      return list;
+    }
 
     // --- 入力フォーム処理 ---
     if (document.getElementById('date')) {
@@ -334,32 +333,33 @@ function getAllTransactionsForMonth(year, month) {
 
       const balance = totalIncome - totalExpense;
 
-      document.getElementById('totalIncome').textContent = '¥' + totalIncome.toLocaleString();
-      document.getElementById('totalExpense').textContent = '¥' + totalExpense.toLocaleString();
-          
-      const balanceEl = document.getElementById('totalBalance');
-      balanceEl.textContent = '¥' + balance.toLocaleString();
-      balanceEl.className = balance >= 0 ? 'summary-amount plus' : 'summary-amount minus';
+      if (document.getElementById('totalIncome')) {
+        document.getElementById('totalIncome').textContent = '¥' + totalIncome.toLocaleString();
+        document.getElementById('totalExpense').textContent = '¥' + totalExpense.toLocaleString();
+            
+        const balanceEl = document.getElementById('totalBalance');
+        balanceEl.textContent = '¥' + balance.toLocaleString();
+        balanceEl.className = balance >= 0 ? 'summary-amount plus' : 'summary-amount minus';
 
-      const incomeListEl = document.getElementById('incomeCategoryList');
-      incomeListEl.innerHTML = '';
-      for (const category in incomeCategories) {
-        const li = document.createElement('li');
-        li.innerHTML = `<span>${category}</span> <strong>¥${incomeCategories[category].toLocaleString()}</strong>`;
-        incomeListEl.appendChild(li);
+        const incomeListEl = document.getElementById('incomeCategoryList');
+        incomeListEl.innerHTML = '';
+        for (const category in incomeCategories) {
+          const li = document.createElement('li');
+          li.innerHTML = `<span>${category}</span> <strong>¥${incomeCategories[category].toLocaleString()}</strong>`;
+          incomeListEl.appendChild(li);
+        }
+
+        const expenseListEl = document.getElementById('expenseCategoryList');
+        expenseListEl.innerHTML = '';
+        for (const category in expenseCategories) {
+          const li = document.createElement('li');
+          li.innerHTML = `<span>${category}</span> <strong>¥${expenseCategories[category].toLocaleString()}</strong>`;
+          expenseListEl.appendChild(li);
+        }
+
+        const activeCategories = currentTab === 'income' ? incomeCategories : expenseCategories;
+        drawLocalChart(activeCategories);
       }
-
-      const expenseListEl = document.getElementById('expenseCategoryList');
-      expenseListEl.innerHTML = '';
-      for (const category in expenseCategories) {
-        const li = document.createElement('li');
-        li.innerHTML = `<span>${category}</span> <strong>¥${expenseCategories[category].toLocaleString()}</strong>`;
-        expenseListEl.appendChild(li);
-      }
-
-      const activeCategories = currentTab === 'income' ? incomeCategories : expenseCategories;
-      drawLocalChart(activeCategories);
-    }
 
       // 予算管理との連動
       const budgetInput = document.getElementById('budget-input');
