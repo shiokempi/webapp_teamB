@@ -49,6 +49,7 @@
             <option value="買い物">買い物</option>
             <option value="娯楽">娯楽</option>
             <option value="給与">給与</option>
+            <option value="固定費">固定費</option>
             <option value="その他">その他</option>
           </select>
         </div>
@@ -192,6 +193,56 @@
     let calYear = currentYear;
     let calMonth = currentMonth;
 
+    // --- 固定費データを取得して対象月の収支リスト（配列）を生成する共通ヘルパー ---
+    function getAllTransactionsForMonth(year, month) {
+      const list = [...sampleTransactions];
+
+      if (window.fixedCosts && Array.isArray(window.fixedCosts)) {
+        window.fixedCosts.forEach(item => {
+          const freq = item.frequency;
+
+          // --- 1. 「毎日」の場合：その月の日数分、日ごとにデータを作成 ---
+          if (freq === 'daily' || freq === '毎日') {
+            const daysInMonth = new Date(year, month, 0).getDate();
+            for (let d = 1; d <= daysInMonth; d++) {
+              const dayStr = String(d).padStart(2, '0');
+              const dateStr = `${year}-${String(month).padStart(2, '0')}-${dayStr}`;
+              
+              list.push({
+                id: `fixed_${item.id}_${d}`,
+                type: 'expense',
+                amount: item.amount,
+                category: item.category || '固定費',
+                date: dateStr,
+                memo: '固定費 (毎日)'
+              });
+            }
+          } 
+          // --- 2. それ以外（毎週・毎月・毎年）は毎月1日にまとめて計上 ---
+          else {
+            const dateStr = `${year}-${String(month).padStart(2, '0')}-01`;
+            let monthlyAmount = item.amount;
+
+            if (freq === 'weekly' || freq === '毎週') {
+              monthlyAmount = item.amount * 4;
+            } else if (freq === 'yearly' || freq === '毎年') {
+              monthlyAmount = Math.round(item.amount / 12);
+            }
+
+            list.push({
+              id: 'fixed_' + item.id,
+              type: 'expense',
+              amount: monthlyAmount,
+              category: item.category || '固定費',
+              date: dateStr,
+              memo: '固定費 (' + (item.frequencyName || freq || '月額') + ')'
+            });
+          }
+        });
+      }
+      return list;
+    }
+
     // --- 入力フォーム処理 ---
     if (document.getElementById('date')) {
       document.getElementById('date').valueAsDate = new Date();
@@ -205,12 +256,11 @@
         const category = document.getElementById('category').value;
         const date = document.getElementById('date').value;
         const memo = document.getElementById('memo').value;
-        const nextId = sampleTransactions.length > 0 ? Math.max(...sampleTransactions.map(t => t.id)) + 1 : 1;
+        const nextId = sampleTransactions.length > 0 ? Math.max(...sampleTransactions.map(t => typeof t.id === 'number' ? t.id : 0)) + 1 : 1;
         
         sampleTransactions.push({ id: nextId, type, amount, category, date, memo });
         renderTable();
-        updateUI();
-        renderCalendar(calYear, calMonth);
+        refreshAllViews();
         document.getElementById('amount').value = '';
         document.getElementById('memo').value = '';
       });
@@ -227,14 +277,12 @@
       });
     }
 
-    // --- グラフタブを開いた時のリサイズ対策処理 ---
     function onGraphTabOpen() {
       setTimeout(() => {
         updateUI();
       }, 50);
     }
 
-    // --- 月変更 ---
     function changeMonth(offset) {
       currentMonth += offset;
       if (currentMonth > 12) {
@@ -244,22 +292,30 @@
         currentMonth = 12;
         currentYear -= 1;
       }
-      updateUI();
+      refreshAllViews();
     }
 
-    // --- 画面表示更新（予算管理連動付き） ---
+    // 全体の更新を一括実行（固定費変更時にもこれを呼ぶ）
+    function refreshAllViews() {
+      updateUI();
+      renderCalendar(calYear, calMonth);
+    }
+
+    // --- 画面表示更新（固定費連携・予算管理連動付き） ---
     function updateUI() {
       const header = document.getElementById('currentMonthHeader');
-      if (header) {
-        header.textContent = `${currentYear}年${currentMonth}月`;
-      }
+      if (!header) return;
+      header.textContent = `${currentYear}年${currentMonth}月`;
 
       let totalIncome = 0;
       let totalExpense = 0;
       const incomeCategories = {};
       const expenseCategories = {};
 
-      sampleTransactions.forEach(function(item) {
+      // 固定費を合算した全データから対象月の収支を計算
+      const allTransactions = getAllTransactionsForMonth(currentYear, currentMonth);
+
+      allTransactions.forEach(function(item) {
         const itemDate = new Date(item.date);
         const itemYear = itemDate.getFullYear();
         const itemMonth = itemDate.getMonth() + 1;
@@ -328,7 +384,6 @@
       document.getElementById('budget-input').addEventListener('input', updateUI);
     }
 
-    // --- 円グラフ描画 ---
     function drawLocalChart(categoriesData) {
       const canvas = document.getElementById('categoryChart');
       if (!canvas) return;
@@ -376,14 +431,12 @@
         startAngle += sliceAngle;
       });
 
-      // ドーナツ穴
       ctx.fillStyle = '#ffffff';
       ctx.beginPath();
       ctx.arc(centerX, centerY, radius * 0.55, 0, 2 * Math.PI);
       ctx.fill();
     }
 
-    // --- タブ切り替え ---
     function switchTab(type) {
       currentTab = type;
       document.getElementById('incomeTabContent').classList.remove('active');
@@ -403,13 +456,15 @@
       updateUI();
     }
 
-    // --- ★統合されたカレンダー描画処理 ---
+    // --- カレンダー描画（固定費合算） ---
     function renderCalendar(year, month) {
       const calendarEl = document.querySelector("#calendar");
       if (!calendarEl) return;
 
       const budgetData = {};
-      sampleTransactions.forEach(item => {
+      const allTransactions = getAllTransactionsForMonth(year, month);
+
+      allTransactions.forEach(item => {
         if (!item.date) return;
         const [y, m, d] = item.date.split('-').map(Number);
         const dateKey = `${y}-${m}-${d}`;
@@ -484,7 +539,6 @@
       calendarEl.innerHTML = createHtml;
     }
 
-    // カレンダーの「◀」「▶」ボタンクリック処理
     document.querySelector("#calendar").addEventListener("click", function(event) {
       if (event.target.id === 'prev') {
         calMonth--;
@@ -503,13 +557,11 @@
       }
     });
 
-    // 初期化
+    // 初期表示
     renderTable();
-    updateUI();
-    renderCalendar(calYear, calMonth);
+    refreshAllViews();
   </script>
   
-  <!-- 固定費用スクリプトのみ外部ファイル -->
   <script src="koteihi.js"></script>
 </body>
 </html>

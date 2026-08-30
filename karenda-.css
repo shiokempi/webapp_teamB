@@ -1,4 +1,4 @@
-<style>
+
   /* ── 1. パソコンの画面全体を「背景」にする設定 ── */
   body {
       margin: 0;
@@ -129,4 +129,3 @@
       color: #e03e2d;
       background-color: #fce8e6; /* 支出：薄い赤 */
   }
-</style>
