@@ -1,0 +1,56 @@
+.startup-modal[hidden] {
+  display: none;
+}
+
+body.startup-modal-open {
+  overflow: hidden;
+}
+
+.startup-modal {
+  position: fixed;
+  z-index: 1000;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(22, 32, 42, 0.62);
+}
+
+.startup-modal-dialog {
+  width: min(100%, 560px);
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
+  padding: 28px;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.25);
+}
+
+.startup-modal-dialog h1 { margin-bottom: 8px; color: #222; font-size: 1.5rem; }
+.startup-modal-lead { margin-bottom: 24px; color: #666; line-height: 1.6; }
+.startup-section { padding: 20px 0; border-top: 1px solid #e2e6e9; }
+.startup-section h2 { margin-bottom: 14px; }
+.startup-budget-field { display: flex; flex-direction: column; gap: 6px; }
+.startup-budget-field input { padding: 10px 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 1rem; }
+.startup-fixed-cost-form { display: grid; grid-template-columns: 1fr 110px 120px auto; gap: 8px; }
+.startup-fixed-cost-form select,
+.startup-fixed-cost-form input { min-width: 0; padding: 10px; border: 1px solid #ccc; border-radius: 6px; background: #fff; }
+.startup-add-button,
+.startup-complete-button { border: 0; border-radius: 6px; background: #186580; color: #fff; font-weight: bold; cursor: pointer; }
+.startup-add-button { padding: 10px 16px; }
+.startup-complete-button { width: 100%; min-height: 48px; padding: 12px 20px; font-size: 1rem; }
+.startup-add-button:hover,
+.startup-complete-button:hover { background: #104c62; }
+.startup-error { margin-top: 8px; color: #b42318; font-size: .85rem; }
+.startup-error:empty { display: none; }
+.startup-fixed-cost-list { display: grid; gap: 8px; margin-top: 14px; list-style: none; }
+.startup-fixed-cost-list li { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px; border-radius: 6px; background: #f8f9fa; }
+.startup-fixed-cost-list button { padding: 5px 9px; border: 1px solid #b42318; border-radius: 4px; background: #fff; color: #b42318; cursor: pointer; }
+.startup-fixed-cost-empty { color: #666; font-size: .9rem; }
+
+@media (max-width: 600px) {
+  .startup-modal-dialog { padding: 22px 18px; }
+  .startup-fixed-cost-form { grid-template-columns: 1fr 1fr; }
+  .startup-fixed-cost-form .startup-category { grid-column: 1 / -1; }
+  .startup-add-button { grid-column: 1 / -1; }
+}

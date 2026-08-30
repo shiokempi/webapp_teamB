@@ -3,7 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <title>家計簿 - 予算管理モジュール</title>
-  <link rel="stylesheet" href="style.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="kakeibo.css">
+  <link rel="stylesheet" href="startup-modal.css">
 </head>
 <body>
   <div class="budget-container">
@@ -17,7 +19,8 @@
       </div>
       <div class="input-group">
         <label for="budget-input">今月の予算 (円)</label>
-        <input type="number" id="budget-input" value="100000" step="1000">
+        <input type="number" id="budget-input" min="0" step="1" inputmode="numeric">
+        <p id="budget-error" class="startup-error" role="alert"></p>
       </div>
     </div>
 
@@ -49,6 +52,41 @@
     </div>
   </div>
 
-  <script src="app.js"></script>
+  <!-- 初期設定は独立ページにせず、通常画面を覆うモーダルとして配置する -->
+  <div id="startup-modal" class="startup-modal" hidden>
+    <section class="startup-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="startup-title">
+      <h1 id="startup-title">初期設定</h1>
+      <p class="startup-modal-lead">最初に月の予算と固定費を設定しましょう。</p>
+
+      <section class="startup-section" aria-labelledby="startup-budget-title">
+        <h2 id="startup-budget-title">月予算設定</h2>
+        <label class="startup-budget-field" for="startup-budget">
+          今月の予算（円）
+          <input type="number" id="startup-budget" min="0" step="1" inputmode="numeric" required>
+        </label>
+        <p id="startup-budget-error" class="startup-error" role="alert"></p>
+      </section>
+
+      <section class="startup-section" aria-labelledby="startup-fixed-cost-title">
+        <h2 id="startup-fixed-cost-title">固定費設定</h2>
+        <form id="startup-fixed-cost-form" class="startup-fixed-cost-form" novalidate>
+          <select id="startup-fixed-cost-category" class="startup-category" required aria-label="カテゴリ">
+            <option value="">カテゴリ</option>
+          </select>
+          <select id="startup-fixed-cost-frequency" required aria-label="頻度"></select>
+          <input type="number" id="startup-fixed-cost-amount" min="1" step="1" inputmode="numeric" placeholder="金額（円）" required>
+          <button type="submit" class="startup-add-button">追加</button>
+        </form>
+        <p id="startup-fixed-cost-error" class="startup-error" role="alert"></p>
+        <ul id="startup-fixed-cost-list" class="startup-fixed-cost-list" aria-live="polite"></ul>
+      </section>
+
+      <button type="button" id="startup-complete" class="startup-complete-button">初期設定を完了</button>
+    </section>
+  </div>
+
+  <script src="finance-storage.js"></script>
+  <script src="budget.js"></script>
+  <script src="startup-modal.js"></script>
 </body>
 </html>

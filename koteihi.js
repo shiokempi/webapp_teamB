@@ -151,26 +151,10 @@ function getFixedCostFrequency(fixedCost) {
 
 // 保存済みの固定費を配列として取得する
 function loadFixedCosts() {
-  try {
-    const savedFixedCosts = localStorage.getItem(FIXED_COST_STORAGE_KEY);
-    if (savedFixedCosts === null) {
-      return [];
-    }
-    // 保存済みのデータが配列でない場合は空配列を返す
-    const parsedFixedCosts = JSON.parse(savedFixedCosts);
-    if (!Array.isArray(parsedFixedCosts)) {
-      return [];
-    }
-
-    return parsedFixedCosts.filter((item) => item && typeof item === "object").map((fixedCost) => ({
-      ...fixedCost,
-      // 名前・支払日は画面から外すだけで、以前の保存データは削除しない。
-      frequency: getFixedCostFrequency(fixedCost).value
-    }));
-  } catch (error) {
-    console.error("固定費データの読み込みに失敗しました。", error);
-    return [];
-  }
+  return FinanceStorage.loadFixedCosts().map((fixedCost) => ({
+    ...fixedCost,
+    frequency: getFixedCostFrequency(fixedCost).value
+  }));
 }
 
 // ========================================
@@ -180,7 +164,7 @@ function loadFixedCosts() {
 // 保存に成功してから画面用のデータを更新し、保存失敗時の食い違いを防ぐ
 function saveFixedCosts(nextFixedCosts) {
   try {
-    localStorage.setItem(FIXED_COST_STORAGE_KEY, JSON.stringify(nextFixedCosts));
+    FinanceStorage.saveFixedCosts(nextFixedCosts);
     fixedCosts = nextFixedCosts;
     return true;
   } catch (error) {
