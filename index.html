@@ -49,6 +49,7 @@
             <option value="買い物">買い物</option>
             <option value="娯楽">娯楽</option>
             <option value="給与">給与</option>
+            <option value="固定費">固定費</option>
             <option value="その他">その他</option>
           </select>
         </div>
@@ -189,6 +190,60 @@
     let currentYear = 2026;
     let currentMonth = 8;
 
+    let calYear = currentYear;
+    let calMonth = currentMonth;
+
+    // --- 固定費データを取得して対象月の収支リスト（配列）を生成する共通ヘルパー ---
+function getAllTransactionsForMonth(year, month) {
+  const list = [...sampleTransactions];
+
+  if (window.fixedCosts && Array.isArray(window.fixedCosts)) {
+    window.fixedCosts.forEach(item => {
+      const freq = item.frequency;
+
+      // --- 1. 「毎日」の場合：その月の日数分、日ごとにデータを作成 ---
+      if (freq === 'daily' || freq === '毎日') {
+        // 対象月の日数を取得（例: 8月なら31日）
+        const daysInMonth = new Date(year, month, 0).getDate();
+        for (let d = 1; d <= daysInMonth; d++) {
+          const dayStr = String(d).padStart(2, '0');
+          const dateStr = `${year}-${String(month).padStart(2, '0')}-${dayStr}`;
+          
+          list.push({
+            id: `fixed_${item.id}_${d}`,
+            type: 'expense',
+            amount: item.amount,
+            category: item.category || '固定費',
+            date: dateStr,
+            memo: '固定費 (毎日)'
+          });
+        }
+      } 
+      // --- 2. それ以外（毎週・毎月・毎年）は毎月1日にまとめて計上 ---
+      else {
+        const dateStr = `${year}-${String(month).padStart(2, '0')}-01`;
+        let monthlyAmount = item.amount;
+
+        if (freq === 'weekly' || freq === '毎週') {
+          monthlyAmount = item.amount * 4; // 週4回換算
+        } else if (freq === 'yearly' || freq === '毎年') {
+          monthlyAmount = Math.round(item.amount / 12); // 月割り換算
+        }
+
+        list.push({
+          id: 'fixed_' + item.id,
+          type: 'expense',
+          amount: monthlyAmount,
+          category: item.category || '固定費',
+          date: dateStr,
+          memo: '固定費 (' + (item.frequencyName || freq || '月額') + ')'
+        });
+      }
+    });
+  }
+  return list;
+}
+
     // --- 入力フォーム処理 ---
     if (document.getElementById('date')) {
       document.getElementById('date').valueAsDate = new Date();
@@ -202,11 +257,11 @@
         const category = document.getElementById('category').value;
         const date = document.getElementById('date').value;
         const memo = document.getElementById('memo').value;
-        const nextId = sampleTransactions.length > 0 ? Math.max(...sampleTransactions.map(t => t.id)) + 1 : 1;
+        const nextId = sampleTransactions.length > 0 ? Math.max(...sampleTransactions.map(t => typeof t.id === 'number' ? t.id : 0)) + 1 : 1;
         
         sampleTransactions.push({ id: nextId, type, amount, category, date, memo });
         renderTable();
-        updateUI();
+        refreshAllViews();
         document.getElementById('amount').value = '';
         document.getElementById('memo').value = '';
       });
@@ -223,14 +278,12 @@
       });
     }
 
-    // --- グラフタブを開いた時のリサイズ対策処理 ---
     function onGraphTabOpen() {
       setTimeout(() => {
         updateUI();
       }, 50);
     }
 
-    // --- 月変更 ---
     function changeMonth(offset) {
       currentMonth += offset;
       if (currentMonth > 12) {
@@ -240,10 +293,16 @@
         currentMonth = 12;
         currentYear -= 1;
       }
-      updateUI();
+      refreshAllViews();
     }
 
-    // --- 画面表示更新 ---
+    // 全体の更新を一括実行（固定費変更時にもこれを呼ぶ）
+    function refreshAllViews() {
+      updateUI();
+      renderCalendar(calYear, calMonth);
+    }
+
+    // --- 画面表示更新（固定費連携・予算管理連動付き） ---
     function updateUI() {
       const header = document.getElementById('currentMonthHeader');
       if (!header) return;
@@ -254,7 +313,10 @@
       const incomeCategories = {};
       const expenseCategories = {};
 
-      sampleTransactions.forEach(function(item) {
+      // 固定費を合算した全データから対象月の収支を計算
+      const allTransactions = getAllTransactionsForMonth(currentYear, currentMonth);
+
+      allTransactions.forEach(function(item) {
         const itemDate = new Date(item.date);
         const itemYear = itemDate.getFullYear();
         const itemMonth = itemDate.getMonth() + 1;
@@ -299,7 +361,29 @@
       drawLocalChart(activeCategories);
     }
 
-    // --- 円グラフ描画 ---
+      // 予算管理との連動
+      const budgetInput = document.getElementById('budget-input');
+      if (budgetInput) {
+        const budget = Number(budgetInput.value) || 0;
+        const remaining = budget - totalExpense;
+        const percentage = budget > 0 ? Math.min(Math.round((totalExpense / budget) * 100), 100) : 0;
+
+        document.getElementById('display-budget').textContent = '¥' + budget.toLocaleString();
+        document.getElementById('display-expense').textContent = '¥' + totalExpense.toLocaleString();
+        document.getElementById('display-remaining').textContent = '¥' + remaining.toLocaleString();
+
+        document.getElementById('meter-percentage').textContent = percentage + '%';
+        const fillEl = document.getElementById('meter-fill');
+        if (fillEl) {
+          fillEl.style.width = percentage + '%';
+        }
+      }
+    }
+
+    if (document.getElementById('budget-input')) {
+      document.getElementById('budget-input').addEventListener('input', updateUI);
+    }
+
     function drawLocalChart(categoriesData) {
       const canvas = document.getElementById('categoryChart');
       if (!canvas) return;
@@ -347,14 +431,12 @@
         startAngle += sliceAngle;
       });
 
-      // ドーナツ穴
       ctx.fillStyle = '#ffffff';
       ctx.beginPath();
       ctx.arc(centerX, centerY, radius * 0.55, 0, 2 * Math.PI);
       ctx.fill();
     }
 
-    // --- タブ切り替え ---
     function switchTab(type) {
       currentTab = type;
       document.getElementById('incomeTabContent').classList.remove('active');
@@ -374,13 +456,112 @@
       updateUI();
     }
 
-    // 初期化
+    // --- カレンダー描画（固定費合算） ---
+    function renderCalendar(year, month) {
+      const calendarEl = document.querySelector("#calendar");
+      if (!calendarEl) return;
+
+      const budgetData = {};
+      const allTransactions = getAllTransactionsForMonth(year, month);
+
+      allTransactions.forEach(item => {
+        if (!item.date) return;
+        const [y, m, d] = item.date.split('-').map(Number);
+        const dateKey = `${y}-${m}-${d}`;
+        
+        if (!budgetData[dateKey]) {
+          budgetData[dateKey] = { income: 0, expense: 0 };
+        }
+        if (item.type === 'income') {
+          budgetData[dateKey].income += item.amount;
+        } else {
+          budgetData[dateKey].expense += item.amount;
+        }
+      });
+
+      const firstDate = new Date(year, month - 1, 1);
+      const firstDay = firstDate.getDay();
+      const lastDate = new Date(year, month, 0);
+      const lastDayCount = lastDate.getDate();
+
+      let dayCount = 1;
+      let createHtml = '';
+
+      createHtml += '<div class="calendar-nav">';
+      createHtml += '  <button id="prev">◀</button>';
+      createHtml += '  <span id="calender-title">' + year + '/' + month + '</span>';
+      createHtml += '  <button id="next">▶</button>';
+      createHtml += '</div>';
+
+      createHtml += '<table>';
+      createHtml += '<tr>';
+
+      const weeks = ['日','月','火','水','木','金','土'];
+      for (let i = 0; i < weeks.length; i++){
+        createHtml += '<td>' + weeks[i] + '</td>';
+      }
+      createHtml += '</tr>';
+
+      for (let n = 0; n < 6; n++){
+        if (dayCount > lastDayCount) break;
+        createHtml += '<tr>';
+        for (let d = 0; d < 7; d++){
+          if (n === 0 && d < firstDay){
+            createHtml += '<td></td>';
+          } else if (dayCount > lastDayCount){
+            createHtml += '<td></td>';
+          } else {
+            const dateKey = year + '-' + month + '-' + dayCount;
+            let budgetHtml = '';
+
+            if (budgetData[dateKey]) {
+              const data = budgetData[dateKey];
+              let innerHtml = ''; 
+
+              if (data.income > 0) {
+                innerHtml += '<span class="income">+' + data.income.toLocaleString() + '</span>';
+              }
+              if (data.expense > 0) {
+                innerHtml += '<span class="expense">-' + data.expense.toLocaleString() + '</span>';
+              }
+              if (innerHtml !== '') {
+                budgetHtml = '<div class="budget-box">' + innerHtml + '</div>';
+              }
+            }
+            createHtml += '<td>' + dayCount + budgetHtml + '</td>';
+            dayCount++;
+          }
+        }
+        createHtml += '</tr>';
+      }
+      createHtml += '</table>';
+
+      calendarEl.innerHTML = createHtml;
+    }
+
+    document.querySelector("#calendar").addEventListener("click", function(event) {
+      if (event.target.id === 'prev') {
+        calMonth--;
+        if (calMonth < 1) {
+          calMonth = 12;
+          calYear--;
+        }
+        renderCalendar(calYear, calMonth);
+      } else if (event.target.id === 'next') {
+        calMonth++;
+        if (calMonth > 12) {
+          calMonth = 1;
+          calYear++;
+        }
+        renderCalendar(calYear, calMonth);
+      }
+    });
+
+    // 初期表示
     renderTable();
-    updateUI();
+    refreshAllViews();
   </script>
   
-  <!-- 外部スクリプト -->
-  <script src="karenda-.js"></script>
   <script src="koteihi.js"></script>
 </body>
 </html>

@@ -27,7 +27,6 @@ const DEFAULT_FIXED_COST_FREQUENCY = "monthly";
 
 // 新しい固定費の保存例：
 // { id: 1, category: "サブスク", amount: 980, frequency: "monthly" }
-// frequency は設定として保存するだけで、通常の収支への自動反映は行わない。
 
 const fixedCostForm = document.getElementById("fixed-cost-form");
 const amountInput = document.getElementById("fixed-cost-amount");
@@ -41,41 +40,12 @@ const fixedCostTotals = document.getElementById("fixed-cost-totals");
 let fixedCosts = loadFixedCosts();
 let editingFixedCostId = null;
 
+// ★連携追加: index.html 側から参照できるようにグローバル(window)へセット
+window.fixedCosts = fixedCosts;
+
 // ========================================
 // カテゴリの取得と別ページからの編集方法
 // ========================================
-
-/*
-【将来のカテゴリ編集ページとの連携】
-編集する項目：カテゴリ名の配列（追加・名前変更・削除・並べ替え）。
-保存キー："fixedCostCategories"
-保存形式：["住居費", "通信費", "サブスク", "習い事"]
-
-以下の関数をカテゴリ編集ページの JavaScript にコピーして使用できます。
-koteihi.js はこの画面のDOMを使うため、別ページから直接読み込まないでください。
-
-function saveEditedCategories(editedNames) {
-  const categories = [...new Set(
-    editedNames.map((name) => name.trim()).filter((name) => name !== "")
-  )];
-  localStorage.setItem("fixedCostCategories", JSON.stringify(categories));
-}
-
-// 編集ページで編集した全カテゴリを渡す（保存時の例）：
-// const editedNames = ["住居費", "通信費", "サブスク"];
-// editedNames.push("習い事"); // カテゴリの追加
-// saveEditedCategories(editedNames);
-
-初期一覧が必要なら DEFAULT_FIXED_COST_CATEGORIES を編集ページでも共有し、
-JSON.parse(localStorage.getItem("fixedCostCategories")) が null のときに使います。
-空配列 [] は「選択肢なし」として扱います。保存失敗時の案内は編集ページ側で行ってください。
-この画面に戻るか、別タブで保存すると選択肢を再読込します。
-同じ画面内に編集機能を組み込む場合は、保存後に renderFixedCostCategoryOptions() を呼びます。
-
-注意：カテゴリ名は固定費にも文字列で保存されています。
-選択肢の名前変更・削除だけでは、登録済み固定費のカテゴリは書き換えません。
-登録済みのカテゴリは一覧に残し、固定費の編集時にも選べるようにしています。
-*/
 
 // 保存済みの選択肢を優先し、空白と重複を取り除く
 function loadFixedCostCategories() {
@@ -98,7 +68,8 @@ function loadFixedCostCategories() {
 }
 
 // 選択中の値を保ちながら、カテゴリの選択肢を更新する
-function renderFixedCostCategoryOptions(selectedCategory = categoryInput.value) {
+function renderFixedCostCategoryOptions(selectedCategory = categoryInput ? categoryInput.value : "") {
+  if (!categoryInput) return;
   const categories = loadFixedCostCategories();
   const editingFixedCost = fixedCosts.find((item) => Number(item.id) === editingFixedCostId);
 
@@ -106,7 +77,7 @@ function renderFixedCostCategoryOptions(selectedCategory = categoryInput.value) 
   if (editingFixedCost && !categories.includes(editingFixedCost.category)) {
     categories.push(editingFixedCost.category);
   }
-// 選択肢の順番は保存済みの順番を優先し、最後に追加されたカテゴリを末尾に置く。
+
   categoryInput.replaceChildren();
   const placeholder = document.createElement("option");
   placeholder.value = "";
@@ -128,6 +99,7 @@ function renderFixedCostCategoryOptions(selectedCategory = categoryInput.value) 
 // ========================================
 
 function renderFixedCostFrequencyOptions() {
+  if (!frequencyInput) return;
   frequencyInput.replaceChildren();
   FIXED_COST_FREQUENCIES.forEach((frequency) => {
     const option = document.createElement("option");
@@ -156,7 +128,6 @@ function loadFixedCosts() {
     if (savedFixedCosts === null) {
       return [];
     }
-    // 保存済みのデータが配列でない場合は空配列を返す
     const parsedFixedCosts = JSON.parse(savedFixedCosts);
     if (!Array.isArray(parsedFixedCosts)) {
       return [];
@@ -164,7 +135,6 @@ function loadFixedCosts() {
 
     return parsedFixedCosts.filter((item) => item && typeof item === "object").map((fixedCost) => ({
       ...fixedCost,
-      // 名前・支払日は画面から外すだけで、以前の保存データは削除しない。
       frequency: getFixedCostFrequency(fixedCost).value
     }));
   } catch (error) {
@@ -182,9 +152,20 @@ function saveFixedCosts(nextFixedCosts) {
   try {
     localStorage.setItem(FIXED_COST_STORAGE_KEY, JSON.stringify(nextFixedCosts));
     fixedCosts = nextFixedCosts;
+    
+    // ★連携追加: グローバル変数にも常に最新状態を反映させる
+    window.fixedCosts = fixedCosts;
+
+    // ★連携追加: index.html 側の再描画関数(グラフ・予算・カレンダー等)を実行
+    if (typeof refreshAllViews === "function") {
+      refreshAllViews();
+    }
+
     return true;
   } catch (error) {
-    errorMessage.textContent = "保存できませんでした。ブラウザの保存設定や空き容量を確認してください。";
+    if (errorMessage) {
+      errorMessage.textContent = "保存できませんでした。ブラウザの保存設定や空き容量を確認してください。";
+    }
     console.error("固定費データの保存に失敗しました。", error);
     return false;
   }
@@ -194,19 +175,16 @@ function saveFixedCosts(nextFixedCosts) {
 // 固定費の新規登録
 // ========================================
 
-// 既存のIDと重ならない新しいIDを作る
 function createFixedCostId() {
   return fixedCosts.reduce((largestId, item) => Math.max(largestId, Number(item.id) || 0), 0) + 1;
 }
 
-// 入力内容を新しい固定費として登録する
 function addFixedCost(fixedCostData) {
   const newFixedCost = {
     id: createFixedCostId(),
     ...fixedCostData
   };
 
-  // 同じカテゴリ・金額・頻度の登録も許可する。
   if (!saveFixedCosts([...fixedCosts, newFixedCost])) {
     return;
   }
@@ -219,7 +197,6 @@ function addFixedCost(fixedCostData) {
 // 固定費を頻度順に並び替え
 // ========================================
 
-// 毎日 → 毎週 → 毎月 → 毎年。同じ頻度は元の登録順を保つ。
 function sortFixedCostsByFrequency(costs) {
   const frequencyOrder = FIXED_COST_FREQUENCIES.map((frequency) => frequency.value);
   return [...costs].sort((firstCost, secondCost) => (
@@ -232,7 +209,6 @@ function sortFixedCostsByFrequency(costs) {
 // 固定費一覧を表示
 // ========================================
 
-// 一覧内のボタンを作る
 function createActionButton(label, className, fixedCostId, clickHandler) {
   const button = document.createElement("button");
   button.type = "button";
@@ -243,8 +219,8 @@ function createActionButton(label, className, fixedCostId, clickHandler) {
   return button;
 }
 
-// 登録されている固定費を画面に表示する
 function renderFixedCosts() {
+  if (!fixedCostList) return;
   fixedCostList.replaceChildren();
 
   if (fixedCosts.length === 0) {
@@ -288,8 +264,8 @@ function renderFixedCosts() {
 // 固定費合計を頻度別に計算
 // ========================================
 
-// 頻度の違う金額は足し合わせず、月額・年額への換算もしない
 function calculateFixedCostTotal() {
+  if (!fixedCostTotals) return;
   const totals = Object.fromEntries(FIXED_COST_FREQUENCIES.map((frequency) => [frequency.value, 0]));
   fixedCosts.forEach((fixedCost) => {
     totals[getFixedCostFrequency(fixedCost).value] += Number(fixedCost.amount) || 0;
@@ -312,26 +288,22 @@ function calculateFixedCostTotal() {
 // 固定費の編集
 // ========================================
 
-// 選択した固定費をフォームへ戻し、編集状態にする
 function startEditFixedCost(event) {
   const fixedCostId = Number(event.currentTarget.dataset.fixedCostId);
   const fixedCost = fixedCosts.find((item) => Number(item.id) === fixedCostId);
 
-  if (!fixedCost) {
-    return;
-  }
+  if (!fixedCost) return;
 
   editingFixedCostId = fixedCostId;
-  amountInput.value = fixedCost.amount;
+  if (amountInput) amountInput.value = fixedCost.amount;
   renderFixedCostCategoryOptions(fixedCost.category);
-  frequencyInput.value = getFixedCostFrequency(fixedCost).value;
-  submitButton.textContent = "更新";
-  errorMessage.textContent = "";
-  categoryInput.focus();
-  fixedCostForm.scrollIntoView({ behavior: "smooth", block: "start" });
+  if (frequencyInput) frequencyInput.value = getFixedCostFrequency(fixedCost).value;
+  if (submitButton) submitButton.textContent = "更新";
+  if (errorMessage) errorMessage.textContent = "";
+  if (categoryInput) categoryInput.focus();
+  if (fixedCostForm) fixedCostForm.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
-// 編集中の固定費を入力内容で更新する
 function updateFixedCost(fixedCostData) {
   const fixedCostIndex = fixedCosts.findIndex(
     (fixedCost) => Number(fixedCost.id) === editingFixedCostId
@@ -353,21 +325,19 @@ function updateFixedCost(fixedCostData) {
   renderFixedCosts();
 }
 
-// フォームを新規登録の状態へ戻す
 function resetFixedCostForm() {
-  fixedCostForm.reset();
+  if (fixedCostForm) fixedCostForm.reset();
   editingFixedCostId = null;
   renderFixedCostCategoryOptions("");
-  frequencyInput.value = DEFAULT_FIXED_COST_FREQUENCY;
-  submitButton.textContent = "追加";
-  errorMessage.textContent = "";
+  if (frequencyInput) frequencyInput.value = DEFAULT_FIXED_COST_FREQUENCY;
+  if (submitButton) submitButton.textContent = "追加";
+  if (errorMessage) errorMessage.textContent = "";
 }
 
 // ========================================
 // 固定費の削除
 // ========================================
 
-// 選択した固定費を確認なしで削除する
 function deleteFixedCost(event) {
   const fixedCostId = Number(event.currentTarget.dataset.fixedCostId);
   const remainingFixedCosts = fixedCosts.filter(
@@ -382,7 +352,7 @@ function deleteFixedCost(event) {
     resetFixedCostForm();
   }
 
-  errorMessage.textContent = "";
+  if (errorMessage) errorMessage.textContent = "";
   renderFixedCosts();
 }
 
@@ -390,7 +360,6 @@ function deleteFixedCost(event) {
 // 入力値チェック
 // ========================================
 
-// フォームの値を確認し、利用できるデータへ変換する
 function validateFixedCost() {
   const amount = Number(amountInput.value);
   const category = categoryInput.value.trim();
@@ -418,26 +387,26 @@ function validateFixedCost() {
 // イベント設定と初回表示
 // ========================================
 
-// 登録と更新で共通の送信処理
-fixedCostForm.addEventListener("submit", (event) => {
-  event.preventDefault();
+if (fixedCostForm) {
+  fixedCostForm.addEventListener("submit", (event) => {
+    event.preventDefault();
 
-  const validationResult = validateFixedCost();
+    const validationResult = validateFixedCost();
 
-  if (!validationResult.isValid) {
-    errorMessage.textContent = validationResult.message;
-    validationResult.input.focus();
-    return;
-  }
+    if (!validationResult.isValid) {
+      if (errorMessage) errorMessage.textContent = validationResult.message;
+      if (validationResult.input) validationResult.input.focus();
+      return;
+    }
 
-  if (editingFixedCostId === null) {
-    addFixedCost(validationResult.data);
-  } else {
-    updateFixedCost(validationResult.data);
-  }
-});
+    if (editingFixedCostId === null) {
+      addFixedCost(validationResult.data);
+    } else {
+      updateFixedCost(validationResult.data);
+    }
+  });
+}
 
-// 別ページから戻ったとき・別タブでカテゴリを保存したときに選択肢を更新する
 window.addEventListener("pageshow", () => renderFixedCostCategoryOptions());
 window.addEventListener("storage", (event) => {
   if (event.storageArea === localStorage && (event.key === FIXED_COST_CATEGORY_STORAGE_KEY || event.key === null)) {
@@ -448,3 +417,8 @@ window.addEventListener("storage", (event) => {
 renderFixedCostFrequencyOptions();
 renderFixedCostCategoryOptions();
 renderFixedCosts();
+
+// 初回読み込み時にもメインの表示更新を実行
+if (typeof refreshAllViews === "function") {
+  refreshAllViews();
+}
