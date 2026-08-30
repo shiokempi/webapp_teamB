@@ -13,7 +13,7 @@
   <input type="radio" id="tab-input" name="nav-tab" checked>
   <input type="radio" id="tab-budget" name="nav-tab">
   <input type="radio" id="tab-graph" name="nav-tab" onchange="onGraphTabOpen()">
-  <input type="radio" id="tab-calendar" name="nav-tab">
+  <input type="radio" id="tab-calendar" name="nav-tab" onchange="renderCalendar(calYear, calMonth)">
   <input type="radio" id="tab-fixed" name="nav-tab">
 
   <nav class="app-nav">
@@ -136,7 +136,7 @@
       <div id="calendar"></div>
     </section>
 
-    <!-- 5. 固定費（元通りの完全なフォーム） -->
+    <!-- 5. 固定費 -->
     <section class="page-section section-fixed">
       <div class="budget-container fixed-cost-container">
         <form id="fixed-cost-form" class="fixed-cost-form" aria-labelledby="fixed-cost-title" novalidate>
@@ -189,6 +189,9 @@
     let currentYear = 2026;
     let currentMonth = 8;
 
+    let calYear = currentYear;
+    let calMonth = currentMonth;
+
     // --- 入力フォーム処理 ---
     if (document.getElementById('date')) {
       document.getElementById('date').valueAsDate = new Date();
@@ -207,6 +210,7 @@
         sampleTransactions.push({ id: nextId, type, amount, category, date, memo });
         renderTable();
         updateUI();
+        renderCalendar(calYear, calMonth);
         document.getElementById('amount').value = '';
         document.getElementById('memo').value = '';
       });
@@ -243,11 +247,12 @@
       updateUI();
     }
 
-    // --- 画面表示更新 ---
+    // --- 画面表示更新（予算管理連動付き） ---
     function updateUI() {
       const header = document.getElementById('currentMonthHeader');
-      if (!header) return;
-      header.textContent = `${currentYear}年${currentMonth}月`;
+      if (header) {
+        header.textContent = `${currentYear}年${currentMonth}月`;
+      }
 
       let totalIncome = 0;
       let totalExpense = 0;
@@ -272,31 +277,55 @@
 
       const balance = totalIncome - totalExpense;
 
-      document.getElementById('totalIncome').textContent = '¥' + totalIncome.toLocaleString();
-      document.getElementById('totalExpense').textContent = '¥' + totalExpense.toLocaleString();
-          
-      const balanceEl = document.getElementById('totalBalance');
-      balanceEl.textContent = '¥' + balance.toLocaleString();
-      balanceEl.className = balance >= 0 ? 'summary-amount plus' : 'summary-amount minus';
+      if (document.getElementById('totalIncome')) {
+        document.getElementById('totalIncome').textContent = '¥' + totalIncome.toLocaleString();
+        document.getElementById('totalExpense').textContent = '¥' + totalExpense.toLocaleString();
+            
+        const balanceEl = document.getElementById('totalBalance');
+        balanceEl.textContent = '¥' + balance.toLocaleString();
+        balanceEl.className = balance >= 0 ? 'summary-amount plus' : 'summary-amount minus';
 
-      const incomeListEl = document.getElementById('incomeCategoryList');
-      incomeListEl.innerHTML = '';
-      for (const category in incomeCategories) {
-        const li = document.createElement('li');
-        li.innerHTML = `<span>${category}</span> <strong>¥${incomeCategories[category].toLocaleString()}</strong>`;
-        incomeListEl.appendChild(li);
+        const incomeListEl = document.getElementById('incomeCategoryList');
+        incomeListEl.innerHTML = '';
+        for (const category in incomeCategories) {
+          const li = document.createElement('li');
+          li.innerHTML = `<span>${category}</span> <strong>¥${incomeCategories[category].toLocaleString()}</strong>`;
+          incomeListEl.appendChild(li);
+        }
+
+        const expenseListEl = document.getElementById('expenseCategoryList');
+        expenseListEl.innerHTML = '';
+        for (const category in expenseCategories) {
+          const li = document.createElement('li');
+          li.innerHTML = `<span>${category}</span> <strong>¥${expenseCategories[category].toLocaleString()}</strong>`;
+          expenseListEl.appendChild(li);
+        }
+
+        const activeCategories = currentTab === 'income' ? incomeCategories : expenseCategories;
+        drawLocalChart(activeCategories);
       }
 
-      const expenseListEl = document.getElementById('expenseCategoryList');
-      expenseListEl.innerHTML = '';
-      for (const category in expenseCategories) {
-        const li = document.createElement('li');
-        li.innerHTML = `<span>${category}</span> <strong>¥${expenseCategories[category].toLocaleString()}</strong>`;
-        expenseListEl.appendChild(li);
-      }
+      // 予算管理との連動
+      const budgetInput = document.getElementById('budget-input');
+      if (budgetInput) {
+        const budget = Number(budgetInput.value) || 0;
+        const remaining = budget - totalExpense;
+        const percentage = budget > 0 ? Math.min(Math.round((totalExpense / budget) * 100), 100) : 0;
 
-      const activeCategories = currentTab === 'income' ? incomeCategories : expenseCategories;
-      drawLocalChart(activeCategories);
+        document.getElementById('display-budget').textContent = '¥' + budget.toLocaleString();
+        document.getElementById('display-expense').textContent = '¥' + totalExpense.toLocaleString();
+        document.getElementById('display-remaining').textContent = '¥' + remaining.toLocaleString();
+
+        document.getElementById('meter-percentage').textContent = percentage + '%';
+        const fillEl = document.getElementById('meter-fill');
+        if (fillEl) {
+          fillEl.style.width = percentage + '%';
+        }
+      }
+    }
+
+    if (document.getElementById('budget-input')) {
+      document.getElementById('budget-input').addEventListener('input', updateUI);
     }
 
     // --- 円グラフ描画 ---
@@ -374,13 +403,113 @@
       updateUI();
     }
 
+    // --- ★統合されたカレンダー描画処理 ---
+    function renderCalendar(year, month) {
+      const calendarEl = document.querySelector("#calendar");
+      if (!calendarEl) return;
+
+      const budgetData = {};
+      sampleTransactions.forEach(item => {
+        if (!item.date) return;
+        const [y, m, d] = item.date.split('-').map(Number);
+        const dateKey = `${y}-${m}-${d}`;
+        
+        if (!budgetData[dateKey]) {
+          budgetData[dateKey] = { income: 0, expense: 0 };
+        }
+        if (item.type === 'income') {
+          budgetData[dateKey].income += item.amount;
+        } else {
+          budgetData[dateKey].expense += item.amount;
+        }
+      });
+
+      const firstDate = new Date(year, month - 1, 1);
+      const firstDay = firstDate.getDay();
+      const lastDate = new Date(year, month, 0);
+      const lastDayCount = lastDate.getDate();
+
+      let dayCount = 1;
+      let createHtml = '';
+
+      createHtml += '<div class="calendar-nav">';
+      createHtml += '  <button id="prev">◀</button>';
+      createHtml += '  <span id="calender-title">' + year + '/' + month + '</span>';
+      createHtml += '  <button id="next">▶</button>';
+      createHtml += '</div>';
+
+      createHtml += '<table>';
+      createHtml += '<tr>';
+
+      const weeks = ['日','月','火','水','木','金','土'];
+      for (let i = 0; i < weeks.length; i++){
+        createHtml += '<td>' + weeks[i] + '</td>';
+      }
+      createHtml += '</tr>';
+
+      for (let n = 0; n < 6; n++){
+        if (dayCount > lastDayCount) break;
+        createHtml += '<tr>';
+        for (let d = 0; d < 7; d++){
+          if (n === 0 && d < firstDay){
+            createHtml += '<td></td>';
+          } else if (dayCount > lastDayCount){
+            createHtml += '<td></td>';
+          } else {
+            const dateKey = year + '-' + month + '-' + dayCount;
+            let budgetHtml = '';
+
+            if (budgetData[dateKey]) {
+              const data = budgetData[dateKey];
+              let innerHtml = ''; 
+
+              if (data.income > 0) {
+                innerHtml += '<span class="income">+' + data.income.toLocaleString() + '</span>';
+              }
+              if (data.expense > 0) {
+                innerHtml += '<span class="expense">-' + data.expense.toLocaleString() + '</span>';
+              }
+              if (innerHtml !== '') {
+                budgetHtml = '<div class="budget-box">' + innerHtml + '</div>';
+              }
+            }
+            createHtml += '<td>' + dayCount + budgetHtml + '</td>';
+            dayCount++;
+          }
+        }
+        createHtml += '</tr>';
+      }
+      createHtml += '</table>';
+
+      calendarEl.innerHTML = createHtml;
+    }
+
+    // カレンダーの「◀」「▶」ボタンクリック処理
+    document.querySelector("#calendar").addEventListener("click", function(event) {
+      if (event.target.id === 'prev') {
+        calMonth--;
+        if (calMonth < 1) {
+          calMonth = 12;
+          calYear--;
+        }
+        renderCalendar(calYear, calMonth);
+      } else if (event.target.id === 'next') {
+        calMonth++;
+        if (calMonth > 12) {
+          calMonth = 1;
+          calYear++;
+        }
+        renderCalendar(calYear, calMonth);
+      }
+    });
+
     // 初期化
     renderTable();
     updateUI();
+    renderCalendar(calYear, calMonth);
   </script>
   
-  <!-- 外部スクリプト -->
-  <script src="karenda-.js"></script>
+  <!-- 固定費用スクリプトのみ外部ファイル（※karenda-.jsは不要になったので削除済み） -->
   <script src="koteihi.js"></script>
 </body>
 </html>

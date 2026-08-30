@@ -1,0 +1,132 @@
+<style>
+  /* ── 1. パソコンの画面全体を「背景」にする設定 ── */
+  body {
+      margin: 0;
+      padding: 0;
+      background-color: #f1f3f5; /* 画面全体の背景を落ち着いたグレーに */
+      display: flex;
+      justify-content: center;   /* 左右の真ん中に寄せる */
+      align-items: center;       /* 上下の真ん中に寄せる */
+      min-height: 100vh;         /* パソコン画面の縦いっぱいの高さを基準にする */
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+
+  /* ── 2. カレンダーを「完全スマホサイズ」に固定する設定 ── */
+  #calendar {
+      width: 390px;           /* ★一般的なスマホ（iPhoneなど）の横幅にガッチリ固定 */
+      height: 780px;          /* ★スマホの縦長比率（約1:2）にガッチリ固定 */
+      background-color: #ffffff;
+      padding: 24px 16px;
+      box-sizing: border-box;
+      
+      /* パソコン画面で浮き上がって見えるような綺麗な影と角丸 */
+      border: 1px solid #e2e8f0;
+      border-radius: 32px;    /* スマホの端末ケースのような丸み */
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.06); 
+      
+      /* 中身を縦並びにして、きれいに収める */
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;       /* はみ出た部分を非表示に */
+  }
+
+  /* ── 3. 上部ナビゲーション（ボタンと年月） ── */
+  .calendar-nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      background-color: #f8f9fa;
+      padding: 12px 16px;
+      border-radius: 14px;
+  }
+  #calender-title {
+      font-size: 18px;
+      font-weight: bold;
+      color: #1a1a1a;
+  }
+  .calendar-nav button {
+      background-color: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      width: 38px;
+      height: 38px;
+      font-size: 16px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+  }
+  .calendar-nav button:active {
+      background-color: #e2e8f0;
+      transform: scale(0.95);
+  }
+
+  /* ── 4. カレンダーの表（テーブル） ── */
+  table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 5px; /* マス同士のすき間を少し広げてスタイリッシュに */
+      flex-grow: 1;        /* スマホの縦の長さに合わせてテーブルを自動で伸ばす */
+  }
+  
+  /* 曜日の行 */
+  tr:first-child td {
+      background-color: transparent;
+      font-weight: bold;
+      color: #94a3b8;
+      height: 25px;
+      vertical-align: middle;
+      text-align: center;
+      border: none;
+      font-size: 12px;
+  }
+
+  /* 日付のマス */
+  td {
+      width: 14.28%;
+      /* 高さは固定せず、スマホの縦幅（height: 780px）に合わせて自動で均等に引き伸ばされます */
+      vertical-align: top;
+      padding: 6px 4px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #334155;
+      background-color: #f8fafc; /* マスの背景を優しい白に */
+      border: 1px solid #f1f5f9;
+      border-radius: 10px;       /* マスも角丸にして優しく */
+  }
+
+  /* データがない空白のマスは目立たないように透明化 */
+  table tr:not(:first-child) td:empty {
+      background-color: transparent;
+      border: none;
+  }
+
+  /* ── 5. 収支データの表示部分 ── */
+  .budget-box {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      margin-top: 4px;
+  }
+  .budget-box span {
+      display: block;
+      font-size: 9px;
+      font-weight: bold;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      padding: 2px 0;
+      border-radius: 4px;
+      text-align: center;
+  }
+  .income {
+      color: #2b78e4;
+      background-color: #e8f0fe; /* 収入：薄い青 */
+  }
+  .expense {
+      color: #e03e2d;
+      background-color: #fce8e6; /* 支出：薄い赤 */
+  }
+</style>

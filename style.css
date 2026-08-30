@@ -642,6 +642,108 @@ input[name="nav-tab"] {
 }
 
 /* ==================================================
+   3-5. カレンダー 
+   ================================================== */
+.calendar-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  background-color: #f8f9fa;
+  padding: 10px 14px;
+  border-radius: 12px;
+}
+
+#calender-title {
+  font-size: 1.1rem;
+  font-weight: bold;
+  color: #1a1a1a;
+}
+
+.calendar-nav button {
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  width: 36px;
+  height: 36px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.calendar-nav button:active {
+  background-color: #e2e8f0;
+  transform: scale(0.95);
+}
+
+.section-calendar table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 4px;
+}
+
+.section-calendar tr:first-child td {
+  background-color: transparent;
+  font-weight: bold;
+  color: #94a3b8;
+  height: 24px;
+  vertical-align: middle;
+  text-align: center;
+  border: none;
+  font-size: 0.75rem;
+}
+
+.section-calendar td {
+  width: 14.28%;
+  height: 52px;
+  vertical-align: top;
+  padding: 4px 2px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #334155;
+  background-color: #f8fafc;
+  border: 1px solid #f1f5f9;
+  border-radius: 8px;
+}
+
+.section-calendar table tr:not(:first-child) td:empty {
+  background-color: transparent;
+  border: none;
+}
+
+.budget-box {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 2px;
+}
+
+.budget-box span {
+  display: block;
+  font-size: 0.65rem;
+  font-weight: bold;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 1px 0;
+  border-radius: 3px;
+  text-align: center;
+}
+
+.income {
+  color: #2b78e4;
+  background-color: #e8f0fe;
+}
+
+.expense {
+  color: #e03e2d;
+  background-color: #fce8e6;
+}
+
+/* ==================================================
    4. レスポンシブ調整
    ================================================== */
 @media (max-width: 420px) {
@@ -649,3 +751,4 @@ input[name="nav-tab"] {
     box-shadow: none;
   }
 }
+
