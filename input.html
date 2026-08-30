@@ -40,6 +40,8 @@
         <option value="transport">交通費</option>
         <option value="shopping">買い物</option>
         <option value="entertainment">娯楽</option>
+        <option value="pay">給料</option>
+        <option value="allowance">お小遣い</option>
         <option value="other">その他</option>
       </select>
     </div>
@@ -82,6 +84,8 @@
         transport: '交通費',
         shopping: '買い物',
         entertainment: '娯楽',
+        pay: '給料',
+        allowance: 'お小遣い',
         other: 'その他'
     };
 
@@ -91,9 +95,12 @@
     // 日付入力の初期値として今日の日付を自動セット
     document.getElementById('date').valueAsDate = new Date();
 
-    // ボタンを押したときの処理
-    document.getElementById('transactionForm').addEventListener('submit', function(e) {
-      e.preventDefault(); // 画面のリロードを防止
+    // ボタンを押したときの処理開始の合図
+    document.getElementById('transactionForm').addEventListener('submit', handleFormSubmit);
+
+    //ボタンが押されたときの処理
+    function handleFormSubmit(e) {
+           e.preventDefault(); // 画面のリロードを防止
 
       // 画面の入力値を取得
       const type = document.getElementById('type').value;
@@ -126,9 +133,10 @@
       // 入力フォームのクリア（日付と種別以外）
       document.getElementById('amount').value = '';
       document.getElementById('memo').value = '';
-    });
+    }
 
-    // 表を描画・更新する関数
+
+    // 表を描画・更新する処理
     function renderTable() {
       const tbody = document.getElementById('transactionList');
       tbody.innerHTML = ''; // 一旦クリア
